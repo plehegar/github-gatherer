@@ -1,0 +1,22 @@
+{
+  "name": "github-gatherer",
+  "version": "1.0.0",
+  "description": "Gather repository information from GitHub",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plehegar/github-gatherer.git"
+  },
+  "author": "",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/plehegar/github-gatherer/issues"
+  },
+  "homepage": "https://github.com/plehegar/github-gatherer#readme",
+  "dependencies": {
+    "io-promise": "^1.0.1"
+  }
+}
