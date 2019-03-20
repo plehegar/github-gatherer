@@ -81,19 +81,9 @@ repositories("w3c")
 .then(res => {
   console.log(res.length + " repositories retrieved");
   return res;
-}).then(repos => {
-  return io.readJSON("all-repos.json").then(srs => {
-    srs.forEach(sr => {
-      checkForOld(repos, sr);
-    })
-    return repos;
-   }).catch(e => {
-    console.error(e);
-    return repos;
-   }).then(repos => io.save("all-repos.json", jsonify({
-     fetchedAt: (new Date()).toISOString(),
-     repositories: repos})));
-})
+}).then(repos => io.save("all-repos.json", jsonify({
+  fetchedAt: (new Date()).toISOString(),
+  repositories: repos})))
 .catch(console.error);
 
 module.exports = repositories;

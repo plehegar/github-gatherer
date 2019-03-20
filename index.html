@@ -6,7 +6,7 @@
 <script>
 function _insert(innerHTML) {
   let div = document.createElement("div");
-  div.outerHTML = "<div><h2>" + title + "</h2>" + innerHTML + "</div>";
+  div.innerHTML = innerHTML;
   document.body.appendChild(div);
 }
 
