@@ -51,9 +51,6 @@ function cleanRepository(repo) {
     })
   }
 
-  // add then this repository information was fetched
-  repo.fetchedAt = (new Date()).toISOString();
-
   ["w3cJson", "preview"].forEach(convert2JSON);
 
   // normalize w3c.json group
@@ -131,7 +128,6 @@ hasWikiEnabled
 hasIssuesEnabled
 pushedAt
 updatedAt
-createdAt
 mergeCommitAllowed
 squashMergeAllowed
 defaultBranch: defaultBranchRef {

@@ -90,7 +90,9 @@ repositories("w3c")
    }).catch(e => {
     console.error(e);
     return repos;
-   }).then(repos => io.save("all-repos.json", jsonify(repos)));
+   }).then(repos => io.save("all-repos.json", jsonify({
+     fetchedAt: (new Date()).toISOString(),
+     repositories: repos})));
 })
 .catch(console.error);
 
