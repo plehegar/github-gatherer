@@ -6,7 +6,7 @@
 <script>
 function _insert(innerHTML) {
   let div = document.createElement("div");
-  div.outerHTML = "<div><h2>" + title + "</h2>" + innerHTML + "</div>";
+  div.innerHTML = innerHTML;
   document.body.appendChild(div);
 }
 
@@ -142,6 +142,10 @@ function checkErrors(repos) {
 }
 
 fetch("all-repos.json").then(r => r.json())
+ .then(res => {
+   _insert("<p>Data fetched at " + res.fetchedAt + "</p>");
+   return res.repositories;
+ })
  .then(repos => { console.log("Got " + repos.length + " repositories"); return repos;})
  .then(repos => repos.filter(r => !r.isArchived))
  .then(checkDefaultBranch)
