@@ -4,7 +4,7 @@ const graphql = require("./graphql.js");
 const io = require("io-promise");
 const GH = require("./repository.js");
 
-const { repository, FIELDS, cleanRepository } = GH;
+const { repository, FIELDS, cleanRepository, getAllLabels } = GH;
 
 const jsonify = o => JSON.stringify(o, null, 2);
 
@@ -77,10 +77,22 @@ function checkForOld(repos, repo) {
   } // else retain the new one
 }
 
-repositories("w3c")
+const owner = "w3c";
+
+repositories(owner)
 .then(res => {
   console.log(res.length + " repositories retrieved");
   return res;
+}).then(repos => {
+  return Promise.all(repos.map(repo => {
+    if (repo.labels && repo.labels.length >= 30) {
+      return getAllLabels(owner, repo.name).then(labels => {
+        repo.labels = labels;
+        return repo;
+      })
+    }
+    return repo;
+  }));
 }).then(repos => io.save("all-repos.json", jsonify({
   fetchedAt: (new Date()).toISOString(),
   repositories: repos})))

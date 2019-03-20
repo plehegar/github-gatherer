@@ -1,6 +1,7 @@
 "use strict";
 
 const graphql = require("./graphql.js");
+const io = require("io-promise");
 
 // this takes https://developer.github.com/v4/object/repository/
 // and normalize it
@@ -92,6 +93,15 @@ function cleanRepository(repo) {
       delete repo.branchProtectionRules;
     }
   }
+  repo.milestones = repo.milestones.nodes;
+  if (repo.milestones) {
+    repo.milestones.forEach(cleanup);
+    if (repo.milestones[0] === null) {
+      // something went wrong here, so let's clean that up for now, eg w3c/stories
+      errors.milestones = repo.milestones;
+      delete repo.milestones;
+    }
+  }
   repo.labels = repo.labels.nodes;
   if (repo.labels) {
     try {
@@ -146,6 +156,13 @@ labels(first: 30) {
     name
   }
 }
+milestones(first: 30) {
+  nodes {
+    closed
+    dueOn
+    title
+  }
+}
 codeOwners: object(expression: "HEAD:CODEOWNERS") {
   ... on Blob {
     text
@@ -196,13 +213,74 @@ async function repository(owner, name) {
     `;
 
 
-    let variables = { owver: owner, name: name };
+    let variables = { owner: owner, name: name };
     let repo = await graphql(query, variables);
     return cleanRepository(repo.repository);
 }
 
+async function fetchNodes(query, variables, propName) {
+  const edgesQuery = (endCursor) => {
+    let vars = Object.assign({}, variables);
+    console.log("iterate on %s with %s", vars.owner + '/' + vars.name, endCursor);
+    if (endCursor) vars.endCursor = endCursor;
+    return graphql(query, vars)
+     .then(res => {
+      if (res.repository === null) {
+        throw new Error("Unknown repository " + vars.owner + '/' + vars.name);
+      }
+      let pageInfo = res.repository[propName].pageInfo;
+      let edges = res.repository[propName].edges.map(edge => edge.node);
+      if (pageInfo.hasNextPage === true) {
+        return io.wait(5000, function () {
+          return edgesQuery(pageInfo.endCursor).then(moreEdges =>
+                                                     edges.concat(moreEdges));
+          });
+       } else {
+         return edges;
+       }
+      });
+    };
+  return edgesQuery().then(repos => {
+    // labels are nodes, but we might get more than 30...
+    return Promise.all(repos.map(repo => {
+      if (repo.labels && repo.labels.length >= 30) {
+        return getAllLabels(owner, repo.name).then(labels => {
+          repo.labels = labels;
+          return repo;
+        })
+      }
+      return repo;
+    }));
+  });
+}
+
+async function getAllLabels(owner, name) {
+  const query = `
+  query ($owner: String = "w3c",
+         $name: String = "w3c.github.io",
+         $endCursor: String = null) {
+    repository(owner: $owner, name: $name) {
+      labels(after: $endCursor, first:50) {
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+        edges {
+          node {
+            ... labelFragment
+          }
+        }
+      }
+    }
+  }
+  fragment labelFragment on Label { name } `;
+
+  return fetchNodes(query, { owner: owner, name: name }, "labels")
+    .then(nodes => nodes.map(node => node.name));
+}
+
 function test() {
- repository("w3c", "trace-context")
+ getAllLabels("w3c", "csswg-drafts")
   .then(res => {
     console.log(res);
     return res;
@@ -214,4 +292,4 @@ function test() {
 
 
 // wishes I can simply write export here...
-module.exports = { repository, FIELDS, cleanRepository };
+module.exports = { repository, FIELDS, cleanRepository, getAllLabels };
