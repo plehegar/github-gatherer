@@ -142,6 +142,10 @@ function checkErrors(repos) {
 }
 
 fetch("all-repos.json").then(r => r.json())
+ .then(res => {
+   _insert("<p>Data feteched at " + res.fetchedAt + "</p>");
+   return res.repositories;
+ })
  .then(repos => { console.log("Got " + repos.length + " repositories"); return repos;})
  .then(repos => repos.filter(r => !r.isArchived))
  .then(checkDefaultBranch)
